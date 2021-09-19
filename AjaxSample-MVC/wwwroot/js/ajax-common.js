@@ -7,7 +7,7 @@ var ajaxCommon = (function () {
   // ******************************
   function handleAjaxError(error) {
     let msg = appSettings.networkErrorMsg;
-    console.log(error + " - " + msg);
+    console.log(error);
   }
 
   function handleError(lastStatus) {

@@ -153,6 +153,176 @@ var productController = (function () {
     get();
   }
 
+  function clearInput() {
+    let entity = {
+      productID: 0,
+      name: "",
+      productNumber: "",
+      color: "",
+      standardCost: 0,
+      listPrice: 0,
+      sellStartDate: new Date().toLocaleDateString(),
+    };
+
+    setInput(entity);
+  }
+
+  function add() {
+    vm.mode = "add";
+    //Display empty entity
+    clearInput();
+    //Display buttons
+    displayButtons();
+    //Unhide detail area
+    displayDetail();
+  }
+
+  function save() {
+    //Determine method to call
+    //based on mode property
+    if (vm.mode === "add") {
+      insertEntity();
+    } else if (vm.mode === "edit") {
+      updateEntity();
+    }
+  }
+
+  function hideButton() {
+    $("#saveButton").addClass("d-none");
+    $("#cancelButton").addClass("d-none");
+  }
+
+  function getFromInput() {
+    return {
+      productID: $("#productID").val(),
+      name: $("#name").val(),
+      productNumber: $("#productNumber").val(),
+      color: $("#color").val(),
+      standardCost: $("#standardCost").val(),
+      listPrice: $("#listPrice").val(),
+      sellStartDate: new Date($("#sellStartDate").val()),
+    };
+  }
+
+  function insertEntity() {
+    let entity = getFromInput();
+
+    let options = {
+      method: "POST",
+      mode: "cors",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(entity), //convert json object or value to a JSON string...
+    };
+
+    fetch(vm.options.apiUrl + vm.options.urlEndpoint, options)
+      .then((response) => processResponse(response))
+      .then((data) => {
+        if (vm.lastStatus.ok) {
+          //Fill last status repsonse
+          //With the data returned
+          vm.lastStatus.response = data;
+
+          //Hide buttons while
+          //"success message" is displayed
+          hideButtons();
+
+          //Display success message
+          displayMessage("Product inserted successfully");
+
+          //Redisplay entity returned
+          setInput(data);
+
+          setTimeout(() => {
+            //After a few seconds
+            //redisplay all data
+            get();
+
+            //Clear message
+            displayMessage("");
+          }, vm.options.msgTimeout);
+        } else {
+          displayError(ajaxCommon.handleError(vm.lastStatus));
+        }
+      })
+      .catch((error) => displayError(ajaxCommon.handleAjaxError(error)));
+  }
+
+  function updateEntity() {
+    let entity = getFromInput();
+
+    let options = {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(entity),
+    };
+
+    fetch(
+      vm.options.apiUrl + vm.options.urlEndpoint + "/" + entity.productID,
+      options
+    )
+      .then((response) => processResponse(response))
+      .then((data) => {
+        if (vm.lastStatus.ok) {
+          //Fill lastStatus.response
+          //with the data returned
+          vm.lastStatus.response = data;
+
+          //Hide button while
+          //"success message" is displayed
+          hideButton();
+
+          //Display a success message
+          displayMessage("Product updated successfully");
+          //Redisplay entity returned
+          setInput(data);
+
+          setTimeout(() => {
+            //After a few seconds
+            //redisplay all data
+            get();
+            //Clear message
+            displayMessage("");
+          }, vm.options.msgTimeout());
+        } else {
+          displayError(ajaxCommon.handleError(vm.lastStatus));
+        }
+      })
+      .catch((error) => displayError(ajaxCommon.handleAjaxError(error)));
+  }
+
+  function deleteEntity(id) {
+    if (confirm(`Delete Product ${id}?`)) {
+      let options = {
+        method: "DELETE",
+      };
+
+      fetch(vm.options.apiUrl + vm.options.urlEndpoint + "/" + id, options)
+        .then((response) => processResponse(response))
+        .then((data) => {
+          if (vm.lastStatus.ok) {
+            vm.lastStatus.response = data;
+            displayMessage("Product deleted successfully");
+
+            //redisplay data
+            get();
+
+            setTimeout(() => {
+              //clear message
+              displayMessage("");
+            }, vm.options.msgTimeout);
+          } else {
+            displayError(ajaxCommon.handleError(vm.lastStatus));
+          }
+        })
+        .catch((error) => displayError(ajaxCommon.handleAjaxError(error)));
+    }
+  }
+
   return {
     setOptions: function (options) {
       if (options) {
@@ -163,5 +333,8 @@ var productController = (function () {
     get: get,
     getEntity: getEntity,
     cancel: cancel,
+    add: add,
+    save: save,
+    deleteEntity: deleteEntity,
   };
 })();
